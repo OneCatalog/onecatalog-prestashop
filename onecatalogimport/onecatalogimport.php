@@ -15,7 +15,7 @@ class OneCatalogImport extends Module
     {
         $this->name = 'onecatalogimport';
         $this->tab = 'administration';
-        $this->version = '0.5.0';
+        $this->version = '0.6.0';
         $this->author = 'OneCatalog';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '1.7.8.0', 'max' => _PS_VERSION_];
@@ -48,7 +48,8 @@ class OneCatalogImport extends Module
     private function installTabs()
     {
         return $this->addTab('AdminOnecatalogParent', 'OneCatalog', 'AdminCatalog')
-            && $this->addTab('AdminOnecatalogImport', 'Import', 'AdminOnecatalogParent');
+            && $this->addTab('AdminOnecatalogImport', 'Import', 'AdminOnecatalogParent')
+            && $this->addTab('AdminOnecatalogB2b', 'Prices & stock', 'AdminOnecatalogParent');
     }
 
     private function addTab($className, $name, $parentClassName)
@@ -69,7 +70,7 @@ class OneCatalogImport extends Module
 
     private function uninstallTabs()
     {
-        foreach (['AdminOnecatalogImport', 'AdminOnecatalogParent'] as $cn) {
+        foreach (['AdminOnecatalogB2b', 'AdminOnecatalogImport', 'AdminOnecatalogParent'] as $cn) {
             $id = (int) Tab::getIdFromClassName($cn);
             if ($id) {
                 $tab = new Tab($id);
@@ -159,6 +160,16 @@ class OneCatalogImport extends Module
         Configuration::updateValue('ONECATALOG_IMPORT_COUNTRY', 0);
         Configuration::updateValue('ONECATALOG_IMPORT_COLLECTIONS', 0);
         Configuration::updateValue('ONECATALOG_COLLECTION_TARGET', 'feature');
+        // B2B (§13).
+        Configuration::updateValue('ONECATALOG_B2B_BASE', 'https://api.onecatalog.net/b2b/v1');
+        Configuration::updateValue('ONECATALOG_B2B_URL_KEY', '');
+        Configuration::updateValue('ONECATALOG_B2B_PRIVATE_KEY', '');
+        Configuration::updateValue('ONECATALOG_B2B_STRATEGY', 'min');
+        Configuration::updateValue('ONECATALOG_B2B_REGION_PRIORITY', '');
+        Configuration::updateValue('ONECATALOG_B2B_SUPPLIER_PRIORITY', '');
+        Configuration::updateValue('ONECATALOG_B2B_SUPPLIER_FIXED', 0);
+        Configuration::updateValue('ONECATALOG_B2B_PROMO_AS_SALE', 1);
+        Configuration::updateValue('ONECATALOG_B2B_MANAGE_STOCK', 1);
         return true;
     }
 
