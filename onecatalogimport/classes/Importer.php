@@ -43,6 +43,10 @@ class OneCatalogImporter
 
         try {
             $catIds = $this->resolveCategories($p);
+            $features = $this->resolveFeatures($p);
+            // Справочные сущности (§3/§7, по умолчанию выкл): добавляют features/категории,
+            // возвращают производителя и теги. Нативное прежде своего.
+            $refs = $this->collectReferences($p, $features, $catIds);
             $defaultCat = $catIds ? (int) $catIds[0] : (int) Configuration::get('PS_HOME_CATEGORY');
 
             if ($existingId && Product::existsInDatabase((int) $existingId, 'product')) {
@@ -75,6 +79,11 @@ class OneCatalogImporter
                 $product->id_category_default = $defaultCat;
             }
 
+            // Бренд → нативный Manufacturer (опционально, find-or-create).
+            if ($refs['manufacturer']) {
+                $product->id_manufacturer = (int) $refs['manufacturer'];
+            }
+
             if (!$product->save()) {
                 return ['status' => 'error', 'public_id' => $publicId, 'message' => 'product save failed'];
             }
@@ -92,7 +101,10 @@ class OneCatalogImporter
                     $product->save();
                 }
             }
-            $this->assignFeatures($id, $this->resolveFeatures($p));
+            $this->assignFeatures($id, $features);
+            if (!empty($refs['tags'])) {
+                $this->applyTags($id, $refs['tags']);
+            }
 
             // Медиа: обложка + галерея (дедуп + трекинг качества, §5.3).
             require_once __DIR__ . '/MediaStore.php';
@@ -270,6 +282,100 @@ class OneCatalogImporter
                 'id_feature_value' => (int) $f['id_feature_value'],
             ]);
         }
+    }
+
+    // --- справочные сущности (§3/§7: нативное прежде своего, по умолчанию выкл) -
+
+    /** Добавляет страну/коллекции в $features/$catIds; возвращает [manufacturer, tags]. */
+    private function collectReferences(array $p, array &$features, array &$catIds)
+    {
+        $out = ['manufacturer' => 0, 'tags' => []];
+
+        if ($this->enabled('IMPORT_BRAND')) {
+            $brand = trim((string) ($p['brand']['menutitle'] ?? $p['brand']['name'] ?? ''));
+            if ($brand !== '') {
+                $out['manufacturer'] = $this->ensureManufacturer($brand);
+            }
+        }
+
+        if ($this->enabled('IMPORT_TAGS') && is_array($p['tags'] ?? null)) {
+            foreach ($p['tags'] as $t) {
+                $n = trim((string) (is_array($t) ? ($t['title'] ?? $t['name'] ?? '') : $t));
+                if ($n !== '') {
+                    $out['tags'][$n] = $n;
+                }
+            }
+            $out['tags'] = array_values($out['tags']);
+        }
+
+        if ($this->enabled('IMPORT_COUNTRY')) {
+            $country = trim((string) ($p['country']['menutitle'] ?? $p['country']['name'] ?? ''));
+            if ($country !== '') {
+                $fid = $this->ensureFeature('Country');
+                $vid = $fid ? $this->ensureFeatureValue($fid, $country) : 0;
+                if ($fid && $vid) {
+                    $features[] = ['id_feature' => $fid, 'id_feature_value' => $vid];
+                }
+            }
+        }
+
+        if ($this->enabled('IMPORT_COLLECTIONS') && is_array($p['collections'] ?? null)) {
+            $names = [];
+            foreach ($p['collections'] as $c) {
+                $n = trim((string) (is_array($c) ? ($c['menutitle'] ?? $c['name'] ?? '') : $c));
+                if ($n !== '') {
+                    $names[$n] = $n;
+                }
+            }
+            if ($names) {
+                $target = (string) (Configuration::get('ONECATALOG_COLLECTION_TARGET') ?: 'feature');
+                if ($target === 'category') {
+                    $home = (int) Configuration::get('PS_HOME_CATEGORY');
+                    foreach ($names as $n) {
+                        $cid = $this->ensureCategory($n, $home);
+                        if ($cid) {
+                            $catIds[] = $cid;
+                        }
+                    }
+                    $catIds = array_values(array_unique(array_map('intval', $catIds)));
+                } else {
+                    $fid = $this->ensureFeature('Collection');
+                    $vid = $fid ? $this->ensureFeatureValue($fid, implode(', ', array_values($names))) : 0;
+                    if ($fid && $vid) {
+                        $features[] = ['id_feature' => $fid, 'id_feature_value' => $vid];
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    private function ensureManufacturer($name)
+    {
+        $id = (int) Db::getInstance()->getValue(
+            'SELECT id_manufacturer FROM `' . _DB_PREFIX_ . "manufacturer` WHERE name = '" . pSQL($name) . "' LIMIT 1"
+        );
+        if ($id) {
+            return $id;
+        }
+        $m = new Manufacturer();
+        $m->name = $name;
+        $m->active = 1;
+        return $m->add() ? (int) $m->id : 0;
+    }
+
+    private function applyTags($idProduct, array $names)
+    {
+        Tag::deleteTagsForProduct((int) $idProduct);
+        foreach ($this->langIds() as $idLang) {
+            Tag::addTags($idLang, (int) $idProduct, $names);
+        }
+    }
+
+    private function enabled($key)
+    {
+        return (int) Configuration::get('ONECATALOG_' . $key) === 1;
     }
 
     // --- габариты (Units → единицы магазина, §5.6) ---------------------------

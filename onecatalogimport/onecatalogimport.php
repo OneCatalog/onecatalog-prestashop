@@ -15,7 +15,7 @@ class OneCatalogImport extends Module
     {
         $this->name = 'onecatalogimport';
         $this->tab = 'administration';
-        $this->version = '0.4.0';
+        $this->version = '0.5.0';
         $this->author = 'OneCatalog';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '1.7.8.0', 'max' => _PS_VERSION_];
@@ -153,6 +153,12 @@ class OneCatalogImport extends Module
         Configuration::updateValue('ONECATALOG_STEP', 10);
         Configuration::updateValue('ONECATALOG_NEW_ACTIVE', 1);
         Configuration::updateValue('ONECATALOG_PICKER_BASE', 'https://tools.onecatalog.net');
+        // Справочные сущности (§3/§7): по умолчанию ВЫКЛючены.
+        Configuration::updateValue('ONECATALOG_IMPORT_BRAND', 0);
+        Configuration::updateValue('ONECATALOG_IMPORT_TAGS', 0);
+        Configuration::updateValue('ONECATALOG_IMPORT_COUNTRY', 0);
+        Configuration::updateValue('ONECATALOG_IMPORT_COLLECTIONS', 0);
+        Configuration::updateValue('ONECATALOG_COLLECTION_TARGET', 'feature');
         return true;
     }
 
@@ -168,6 +174,12 @@ class OneCatalogImport extends Module
             Configuration::updateValue('ONECATALOG_STEP', max(10, (int) Tools::getValue('ONECATALOG_STEP')));
             Configuration::updateValue('ONECATALOG_NEW_ACTIVE', (int) Tools::getValue('ONECATALOG_NEW_ACTIVE'));
             Configuration::updateValue('ONECATALOG_PICKER_BASE', rtrim(trim((string) Tools::getValue('ONECATALOG_PICKER_BASE')), '/'));
+            Configuration::updateValue('ONECATALOG_IMPORT_BRAND', (int) Tools::getValue('ONECATALOG_IMPORT_BRAND'));
+            Configuration::updateValue('ONECATALOG_IMPORT_TAGS', (int) Tools::getValue('ONECATALOG_IMPORT_TAGS'));
+            Configuration::updateValue('ONECATALOG_IMPORT_COUNTRY', (int) Tools::getValue('ONECATALOG_IMPORT_COUNTRY'));
+            Configuration::updateValue('ONECATALOG_IMPORT_COLLECTIONS', (int) Tools::getValue('ONECATALOG_IMPORT_COLLECTIONS'));
+            $ct = (string) Tools::getValue('ONECATALOG_COLLECTION_TARGET');
+            Configuration::updateValue('ONECATALOG_COLLECTION_TARGET', in_array($ct, ['feature', 'category'], true) ? $ct : 'feature');
             $output .= $this->displayConfirmation($this->trans('Settings saved.', [], 'Modules.Onecatalogimport.Admin'));
         }
 
@@ -193,6 +205,17 @@ class OneCatalogImport extends Module
                         ],
                     ],
                     ['type' => 'text', 'label' => $this->trans('Picker base URL', [], 'Modules.Onecatalogimport.Admin'), 'name' => 'ONECATALOG_PICKER_BASE', 'size' => 60, 'desc' => $this->trans('Origin of the product picker widget.', [], 'Modules.Onecatalogimport.Admin')],
+                    $this->boolField('ONECATALOG_IMPORT_BRAND', $this->trans('Import brand', [], 'Modules.Onecatalogimport.Admin'), $this->trans('→ native Manufacturer. Off by default.', [], 'Modules.Onecatalogimport.Admin')),
+                    $this->boolField('ONECATALOG_IMPORT_TAGS', $this->trans('Import tags', [], 'Modules.Onecatalogimport.Admin'), $this->trans('→ native product Tags. Off by default.', [], 'Modules.Onecatalogimport.Admin')),
+                    $this->boolField('ONECATALOG_IMPORT_COUNTRY', $this->trans('Import country', [], 'Modules.Onecatalogimport.Admin'), $this->trans('→ feature “Country”. Off by default.', [], 'Modules.Onecatalogimport.Admin')),
+                    $this->boolField('ONECATALOG_IMPORT_COLLECTIONS', $this->trans('Import collections', [], 'Modules.Onecatalogimport.Admin'), $this->trans('Off by default.', [], 'Modules.Onecatalogimport.Admin')),
+                    [
+                        'type' => 'select', 'label' => $this->trans('Collections target', [], 'Modules.Onecatalogimport.Admin'), 'name' => 'ONECATALOG_COLLECTION_TARGET',
+                        'options' => ['query' => [
+                            ['id' => 'feature', 'name' => $this->trans('Feature', [], 'Modules.Onecatalogimport.Admin')],
+                            ['id' => 'category', 'name' => $this->trans('Category', [], 'Modules.Onecatalogimport.Admin')],
+                        ], 'id' => 'id', 'name' => 'name'],
+                    ],
                 ],
                 'submit' => ['title' => $this->trans('Save', [], 'Modules.Onecatalogimport.Admin')],
             ],
@@ -212,8 +235,25 @@ class OneCatalogImport extends Module
             'ONECATALOG_STEP' => Configuration::get('ONECATALOG_STEP'),
             'ONECATALOG_NEW_ACTIVE' => Configuration::get('ONECATALOG_NEW_ACTIVE'),
             'ONECATALOG_PICKER_BASE' => Configuration::get('ONECATALOG_PICKER_BASE'),
+            'ONECATALOG_IMPORT_BRAND' => Configuration::get('ONECATALOG_IMPORT_BRAND'),
+            'ONECATALOG_IMPORT_TAGS' => Configuration::get('ONECATALOG_IMPORT_TAGS'),
+            'ONECATALOG_IMPORT_COUNTRY' => Configuration::get('ONECATALOG_IMPORT_COUNTRY'),
+            'ONECATALOG_IMPORT_COLLECTIONS' => Configuration::get('ONECATALOG_IMPORT_COLLECTIONS'),
+            'ONECATALOG_COLLECTION_TARGET' => Configuration::get('ONECATALOG_COLLECTION_TARGET'),
         ];
 
         return $helper->generateForm([$fields_form]);
+    }
+
+    /** Поле-переключатель (switch) для HelperForm. */
+    private function boolField($name, $label, $desc)
+    {
+        return [
+            'type' => 'switch', 'label' => $label, 'name' => $name, 'is_bool' => true, 'desc' => $desc,
+            'values' => [
+                ['id' => $name . '_on', 'value' => 1, 'label' => $this->trans('Enabled', [], 'Modules.Onecatalogimport.Admin')],
+                ['id' => $name . '_off', 'value' => 0, 'label' => $this->trans('Disabled', [], 'Modules.Onecatalogimport.Admin')],
+            ],
+        ];
     }
 }
