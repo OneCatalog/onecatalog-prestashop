@@ -15,7 +15,7 @@ class OneCatalogImport extends Module
     {
         $this->name = 'onecatalogimport';
         $this->tab = 'administration';
-        $this->version = '0.1.0';
+        $this->version = '0.2.0';
         $this->author = 'OneCatalog';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '1.7.8.0', 'max' => _PS_VERSION_];

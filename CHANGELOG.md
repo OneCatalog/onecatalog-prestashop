@@ -9,6 +9,18 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — ядро импорта одного товара (версия 0.2.0)
+- **`OneCatalogApi`/`OneCatalogUnits`** (`classes/`) — переиспользованы из OpenCart-порта
+  (чистая логика без зависимостей платформы). Units покрыт офлайн-тестом
+  (`tests/units-test.php`).
+- **`OneCatalogImporter`** — импорт одного товара: идемпотентность по `onecatalog_map`
+  (не по `reference`, §5.1); `Product` (ObjectModel), `reference←article`, название/описание
+  на все языки магазина; категории-дерево find-or-create (`Category`); характеристики →
+  нативные `Feature`/`FeatureValue` (find-by-name, boolean→Yes/No, §5.4); габариты через
+  Units → единицы магазина (`PS_WEIGHT_UNIT`/`PS_DIMENSION_UNIT`). **Цена и статус — только
+  при создании** (§5.6), цена не синтезируется (0); очистка недопустимых символов имени.
+
+
 ### Реализовано на `dev` — каркас модуля (версия 0.1.0)
 - **Главный класс** `OneCatalogImport extends Module` (PrestaShop 8.x / 1.7.8+):
   install/uninstall, версия, совместимость, `getContent()` — страница настроек.
