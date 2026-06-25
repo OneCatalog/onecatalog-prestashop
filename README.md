@@ -7,6 +7,12 @@
 > Текущая работа — в ветке `dev`. В `main` попадают только подтверждённые
 > production-версии (с тегом `vX.Y.Z`).
 
+### 📦 Скачать
+
+Готовый архив модуля — на странице **[Releases](https://github.com/OneCatalog/onecatalog-prestashop/releases)**: скачайте `onecatalog-prestashop-<версия>.zip` и установите через **Модули → Загрузить модуль**. Архив собирается автоматически (GitHub Actions) при публикации тега.
+
+---
+
 - Стандарт интеграции (канон): https://github.com/OneCatalog/onecatalog-standard — соответствует стандарту **v1.2**
 - Эталонная реализация: https://github.com/OneCatalog/onecatalog-woocommerce
 - Целевая платформа: **PrestaShop 8.x** (ObjectModel; `Manufacturer`/`Feature`/`Category` нативно)
