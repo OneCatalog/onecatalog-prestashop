@@ -15,7 +15,7 @@ class OneCatalogImport extends Module
     {
         $this->name = 'onecatalogimport';
         $this->tab = 'administration';
-        $this->version = '0.2.0';
+        $this->version = '0.3.0';
         $this->author = 'OneCatalog';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '1.7.8.0', 'max' => _PS_VERSION_];
@@ -69,7 +69,7 @@ class OneCatalogImport extends Module
             `id_media` INT UNSIGNED NOT NULL AUTO_INCREMENT,
             `content_key` VARCHAR(64) NOT NULL,
             `size` VARCHAR(8) NOT NULL DEFAULT 'min',
-            `id_image` INT UNSIGNED NULL,
+            `file` VARCHAR(255) NOT NULL,
             `shared` TINYINT(1) NOT NULL DEFAULT 0,
             `date_add` DATETIME NOT NULL,
             PRIMARY KEY (`id_media`),

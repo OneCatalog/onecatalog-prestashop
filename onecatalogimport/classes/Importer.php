@@ -94,6 +94,10 @@ class OneCatalogImporter
             }
             $this->assignFeatures($id, $this->resolveFeatures($p));
 
+            // Медиа: обложка + галерея (дедуп + трекинг качества, §5.3).
+            require_once __DIR__ . '/MediaStore.php';
+            (new OneCatalogMediaStore())->applyMedia($id, $p);
+
             return ['status' => $status, 'public_id' => $publicId, 'id_product' => $id];
         } catch (\Throwable $e) {
             return ['status' => 'error', 'public_id' => $publicId, 'message' => $e->getMessage()];
