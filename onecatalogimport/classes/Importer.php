@@ -110,6 +110,11 @@ class OneCatalogImporter
             require_once __DIR__ . '/MediaStore.php';
             (new OneCatalogMediaStore())->applyMedia($id, $p);
 
+            // Хук §8 — сайтовый слой дозаполняет поля, не входящие в ядро.
+            Hook::exec('actionOnecatalogProductImported', [
+                'id_product' => $id, 'public_id' => $publicId, 'status' => $status, 'payload' => $p,
+            ]);
+
             return ['status' => $status, 'public_id' => $publicId, 'id_product' => $id];
         } catch (\Throwable $e) {
             return ['status' => 'error', 'public_id' => $publicId, 'message' => $e->getMessage()];

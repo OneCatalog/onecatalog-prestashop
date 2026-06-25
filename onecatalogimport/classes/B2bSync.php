@@ -119,6 +119,11 @@ class OneCatalogB2bSync
             $flat[] = $c['supplier_id'] . ':' . $c['code'];
         }
         $this->metaSet($idProduct, 'supplier_code', implode(',', $flat));
+
+        // Хук §13.7 — сырые офферы → раскладка по регионам/складам сайтовым слоем.
+        Hook::exec('actionOnecatalogPriceStockUpdated', [
+            'id_product' => (int) $idProduct, 'record' => $rec, 'offers' => $offers,
+        ]);
     }
 
     private function cfg()

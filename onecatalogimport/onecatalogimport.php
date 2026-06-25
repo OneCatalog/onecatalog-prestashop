@@ -15,7 +15,7 @@ class OneCatalogImport extends Module
     {
         $this->name = 'onecatalogimport';
         $this->tab = 'administration';
-        $this->version = '0.6.0';
+        $this->version = '0.7.0';
         $this->author = 'OneCatalog';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '1.7.8.0', 'max' => _PS_VERSION_];
@@ -33,7 +33,9 @@ class OneCatalogImport extends Module
         return parent::install()
             && $this->installSql()
             && $this->initConfig()
-            && $this->installTabs();
+            && $this->installTabs()
+            // §8 — собственные хуки для сайтового слоя (см. docs/EVENTS.md).
+            && $this->registerHook(['actionOnecatalogProductImported', 'actionOnecatalogPriceStockUpdated']);
     }
 
     public function uninstall()
@@ -49,7 +51,8 @@ class OneCatalogImport extends Module
     {
         return $this->addTab('AdminOnecatalogParent', 'OneCatalog', 'AdminCatalog')
             && $this->addTab('AdminOnecatalogImport', 'Import', 'AdminOnecatalogParent')
-            && $this->addTab('AdminOnecatalogB2b', 'Prices & stock', 'AdminOnecatalogParent');
+            && $this->addTab('AdminOnecatalogB2b', 'Prices & stock', 'AdminOnecatalogParent')
+            && $this->addTab('AdminOnecatalogLog', 'Import log', 'AdminOnecatalogParent');
     }
 
     private function addTab($className, $name, $parentClassName)
@@ -70,7 +73,7 @@ class OneCatalogImport extends Module
 
     private function uninstallTabs()
     {
-        foreach (['AdminOnecatalogB2b', 'AdminOnecatalogImport', 'AdminOnecatalogParent'] as $cn) {
+        foreach (['AdminOnecatalogLog', 'AdminOnecatalogB2b', 'AdminOnecatalogImport', 'AdminOnecatalogParent'] as $cn) {
             $id = (int) Tab::getIdFromClassName($cn);
             if ($id) {
                 $tab = new Tab($id);
