@@ -15,7 +15,7 @@ class OneCatalogImport extends Module
     {
         $this->name = 'onecatalogimport';
         $this->tab = 'administration';
-        $this->version = '0.3.0';
+        $this->version = '0.4.0';
         $this->author = 'OneCatalog';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '1.7.8.0', 'max' => _PS_VERSION_];
@@ -32,14 +32,51 @@ class OneCatalogImport extends Module
     {
         return parent::install()
             && $this->installSql()
-            && $this->initConfig();
+            && $this->initConfig()
+            && $this->installTabs();
     }
 
     public function uninstall()
     {
+        $this->uninstallTabs();
         // Служебные таблицы и Configuration НЕ удаляем — иначе при переустановке
         // теряется идемпотентность (public_id ↔ id_product) и товары задвоятся.
         return parent::uninstall();
+    }
+
+    /** Вкладки админ-меню: родитель «OneCatalog» + дети (страницы). */
+    private function installTabs()
+    {
+        return $this->addTab('AdminOnecatalogParent', 'OneCatalog', 'AdminCatalog')
+            && $this->addTab('AdminOnecatalogImport', 'Import', 'AdminOnecatalogParent');
+    }
+
+    private function addTab($className, $name, $parentClassName)
+    {
+        if (Tab::getIdFromClassName($className)) {
+            return true;
+        }
+        $tab = new Tab();
+        $tab->class_name = $className;
+        $tab->module = $this->name;
+        $tab->active = 1;
+        $tab->id_parent = $parentClassName ? (int) Tab::getIdFromClassName($parentClassName) : 0;
+        foreach (Language::getLanguages(false) as $l) {
+            $tab->name[(int) $l['id_lang']] = $name;
+        }
+        return (bool) $tab->add();
+    }
+
+    private function uninstallTabs()
+    {
+        foreach (['AdminOnecatalogImport', 'AdminOnecatalogParent'] as $cn) {
+            $id = (int) Tab::getIdFromClassName($cn);
+            if ($id) {
+                $tab = new Tab($id);
+                $tab->delete();
+            }
+        }
+        return true;
     }
 
     /** Служебные таблицы (§5.1 — служебное вне формы товара). */

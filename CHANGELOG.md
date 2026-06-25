@@ -9,6 +9,21 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — пикер + AJAX-степпер импорта + UX (версия 0.4.0)
+- **Пикер** (`views/js/picker-loader.js`, §2.4 v1.2): iframe виджета; `parentOrigin =
+  window.location.origin` (клиент); доверие по `event.source === iframe`; разбор
+  JSON-строки; своя × + Esc. Импорт по `productPublicIds`. (Порт из OpenCart.)
+- **AJAX-степпер** (`views/js/admin-import.js`, §6 v1.2): порции по «шагу» → admin-
+  контроллер (`ajax=1&action=importBatch`); лоадер, сводка (создано/обновлено/ошибок),
+  отмена, persist `localStorage`; пикер и поле ввода независимы, блок повторного запуска.
+- **`AdminOnecatalogImportController`** (`ModuleAdminController`): страница «Импорт»
+  (Smarty-шаблон) + `ajaxProcessImportBatch` (импорт порции через `OneCatalogImporter`,
+  запись в `onecatalog_log`, JSON {results, log}).
+- **Вкладки админ-меню**: родитель «OneCatalog» + дочерняя «Import» (устанавливаются в
+  `install()`, удаляются в `uninstall()`). EN-строки.
+- ✅ Импорт **кликается end-to-end** в админке PrestaShop.
+
+
 ### Реализовано на `dev` — медиа: обложка/галерея, качество, дедуп (версия 0.3.0)
 - **`OneCatalogMedia`** (`classes/`) — чистые хелперы из OpenCart-порта (выбор размера,
   контент-ключ `sha1(path#size)`, MIME→расширение). Покрыто офлайн-тестом
